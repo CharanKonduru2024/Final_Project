@@ -1,0 +1,210 @@
+Traceback (most recent call last):
+  File "/Users/charankonduru/Desktop/env/lib/python3.12/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+    executenb(
+  File "/Users/charankonduru/Desktop/env/lib/python3.12/site-packages/nbclient/client.py", line 1319, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/charankonduru/Desktop/env/lib/python3.12/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+    return loop.run_until_complete(inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/charankonduru/Desktop/env/lib/python3.12/site-packages/nbclient/client.py", line 709, in async_execute
+    await self.async_execute_cell(
+  File "/Users/charankonduru/Desktop/env/lib/python3.12/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/Users/charankonduru/Desktop/env/lib/python3.12/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, cross_val_score, KFold
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder, FunctionTransformer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import f1_score, confusion_matrix
+from sklearn.model_selection import GridSearchCV
+import mlflow
+from mlflow.models import infer_signature  # Added this import
+import os
+import warnings
+warnings.filterwarnings('ignore')
+
+# MLflow configuration
+MLFLOW_TRACKING_URI = "https://dagshub.com/charankonduru2003/fraud_detection.mlflow"
+os.environ['MLFLOW_TRACKING_USERNAME'] = 'charankonduru2003'
+os.environ['MLFLOW_TRACKING_PASSWORD'] = '0b22e21e2cfc7080ebc0fc65157efbff55fc501e'
+mlflow.set_tracking_uri(uri=MLFLOW_TRACKING_URI)
+mlflow.set_experiment("fraud_detection")
+
+def log_transform(X):
+    """Apply log transformation to numeric data, handling zeros and negative values"""
+    return np.log1p(np.abs(X))
+
+def prepare_data(df):
+    # Separate features and target
+    X = df.drop(['isFlaggedFraud', 'isFraud'], axis=1)
+    y = df['isFraud']
+    
+    # Split categorical and numerical columns
+    categorical_cols = ['type', 'nameOrig', 'nameDest']
+    numerical_cols = ['amount', 'oldbalanceOrg', 'newbalanceOrig', 
+                     'oldbalanceDest', 'newbalanceDest', 'step']
+    
+    return X, y, categorical_cols, numerical_cols
+
+def create_preprocessing(numerical_cols, categorical_cols):
+    # Numerical preprocessing pipeline
+    numerical_pipeline = Pipeline([
+        ('log_transform', FunctionTransformer(log_transform)),
+        ('scaler', StandardScaler()),
+        ('minmax', MinMaxScaler())
+    ])
+    
+    # Categorical preprocessing pipeline
+    categorical_pipeline = Pipeline([
+        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
+    ])
+    
+    # Combine preprocessing steps
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numerical_pipeline, numerical_cols),
+            ('cat', categorical_pipeline, categorical_cols)
+        ])
+    
+    return preprocessor
+
+def log_metrics(metrics_dict, prefix=""):
+    """Helper function to log metrics to MLflow"""
+    for metric_name, metric_value in metrics_dict.items():
+        mlflow.log_metric(f"{prefix}{metric_name}", metric_value)
+
+def evaluate_model(model, X, y):
+    """Evaluate model and return metrics"""
+    y_pred = model.predict(X)
+    f1 = f1_score(y, y_pred)
+    tn, fp, fn, tp = confusion_matrix(y, y_pred).ravel()
+    
+    metrics = {
+        'f1_score': f1,
+        'true_positives': tp,
+        'true_negatives': tn,
+        'false_positives': fp,
+        'false_negatives': fn
+    }
+    return metrics
+
+def train_and_evaluate(df, n_cv_folds=3):
+    with mlflow.start_run(run_name="fraud_detection_experiment"):
+        # Prepare data
+        X, y, categorical_cols, numerical_cols = prepare_data(df)
+        
+        # Create and log preprocessing steps
+        preprocessor = create_preprocessing(numerical_cols, categorical_cols)
+        
+        # Create pipeline
+        pipeline = Pipeline([
+            ('preprocessor', preprocessor),
+            ('classifier', LogisticRegression(max_iter=1000))
+        ])
+        
+        # Log pipeline parameters
+        mlflow.log_param("n_cv_folds", n_cv_folds)
+        mlflow.log_param("model_type", "LogisticRegression")
+        
+        # Perform cross-validation
+        cv = KFold(n_splits=n_cv_folds, shuffle=True, random_state=42)
+        cv_scores = cross_val_score(pipeline, X, y, cv=cv, scoring='f1')
+        
+        # Log cross-validation results
+        mlflow.log_metric("cv_f1_mean", cv_scores.mean())
+        mlflow.log_metric("cv_f1_std", cv_scores.std())
+        
+        # Hyperparameter tuning
+        param_grid = {
+            'classifier__C': [0.001, 0.01, 0.1, 1, 10],
+            'classifier__class_weight': [None, 'balanced'],
+            'classifier__solver': ['lbfgs', 'liblinear']
+        }
+        
+        grid_search = GridSearchCV(
+            pipeline,
+            param_grid,
+            cv=3,
+            scoring='f1',
+            n_jobs=-1
+        )
+        
+        # Fit grid search
+        grid_search.fit(X, y)
+        
+        # Log best parameters
+        mlflow.log_params(grid_search.best_params_)
+        mlflow.log_metric("best_cv_f1", grid_search.best_score_)
+        
+        # Evaluate on full training set
+        best_model = grid_search.best_estimator_
+        train_metrics = evaluate_model(best_model, X, y)
+        log_metrics(train_metrics, "train_")
+        
+        # Log the model
+        signature = infer_signature(X, y)
+        mlflow.sklearn.log_model(best_model, "model", signature=signature)
+        
+        return {
+            'cv_scores': cv_scores,
+            'best_model': best_model,
+            'best_params': grid_search.best_params_,
+            'train_metrics': train_metrics
+        }
+
+# Run the pipeline with the existing DataFrame
+results = train_and_evaluate(data)  # Changed df to data to match your variable name
+
+# Print results
+print("\nCross-validation Results:")
+print(f"F1 Scores: {results['cv_scores']}")
+print(f"Mean F1: {results['cv_scores'].mean():.3f} (±{results['cv_scores'].std():.3f})")
+
+print("\nBest Hyperparameters:")
+print(results['best_params'])
+
+print("\nTraining Set Metrics:")
+for metric_name, metric_value in results['train_metrics'].items():
+    print(f"{metric_name}: {metric_value}")
+------------------
+
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mMlflowException[0m                           Traceback (most recent call last)
+Cell [0;32mIn[9], line 21[0m
+[1;32m     19[0m os[38;5;241m.[39menviron[[38;5;124m'[39m[38;5;124mMLFLOW_TRACKING_PASSWORD[39m[38;5;124m'[39m] [38;5;241m=[39m [38;5;124m'[39m[38;5;124m0b22e21e2cfc7080ebc0fc65157efbff55fc501e[39m[38;5;124m'[39m
+[1;32m     20[0m mlflow[38;5;241m.[39mset_tracking_uri(uri[38;5;241m=[39mMLFLOW_TRACKING_URI)
+[0;32m---> 21[0m [43mmlflow[49m[38;5;241;43m.[39;49m[43mset_experiment[49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43mfraud_detection[39;49m[38;5;124;43m"[39;49m[43m)[49m
+[1;32m     23[0m [38;5;28;01mdef[39;00m [38;5;21mlog_transform[39m(X):
+[1;32m     24[0m [38;5;250m    [39m[38;5;124;03m"""Apply log transformation to numeric data, handling zeros and negative values"""[39;00m
+
+File [0;32m~/Desktop/env/lib/python3.12/site-packages/mlflow/tracking/fluent.py:182[0m, in [0;36mset_experiment[0;34m(experiment_name, experiment_id)[0m
+[1;32m    176[0m             [38;5;28;01mraise[39;00m MlflowException(
+[1;32m    177[0m                 message[38;5;241m=[39m[38;5;124mf[39m[38;5;124m"[39m[38;5;124mExperiment with ID [39m[38;5;124m'[39m[38;5;132;01m{[39;00mexperiment_id[38;5;132;01m}[39;00m[38;5;124m'[39m[38;5;124m does not exist.[39m[38;5;124m"[39m,
+[1;32m    178[0m                 error_code[38;5;241m=[39mRESOURCE_DOES_NOT_EXIST,
+[1;32m    179[0m             )
+[1;32m    181[0m     [38;5;28;01mif[39;00m experiment[38;5;241m.[39mlifecycle_stage [38;5;241m!=[39m LifecycleStage[38;5;241m.[39mACTIVE:
+[0;32m--> 182[0m         [38;5;28;01mraise[39;00m MlflowException(
+[1;32m    183[0m             message[38;5;241m=[39m(
+[1;32m    184[0m                 [38;5;124mf[39m[38;5;124m"[39m[38;5;124mCannot set a deleted experiment [39m[38;5;132;01m{[39;00mexperiment[38;5;241m.[39mname[38;5;132;01m!r}[39;00m[38;5;124m as the active[39m[38;5;124m"[39m
+[1;32m    185[0m                 [38;5;124m"[39m[38;5;124m experiment. [39m[38;5;124m"[39m
+[1;32m    186[0m                 [38;5;124m"[39m[38;5;124mYou can restore the experiment, or permanently delete the [39m[38;5;124m"[39m
+[1;32m    187[0m                 [38;5;124m"[39m[38;5;124mexperiment to create a new one.[39m[38;5;124m"[39m
+[1;32m    188[0m             ),
+[1;32m    189[0m             error_code[38;5;241m=[39mINVALID_PARAMETER_VALUE,
+[1;32m    190[0m         )
+[1;32m    192[0m [38;5;28;01mglobal[39;00m _active_experiment_id
+[1;32m    193[0m _active_experiment_id [38;5;241m=[39m experiment[38;5;241m.[39mexperiment_id
+
+[0;31mMlflowException[0m: Cannot set a deleted experiment 'fraud_detection' as the active experiment. You can restore the experiment, or permanently delete the experiment to create a new one.
+
