@@ -1,0 +1,11 @@
+{
+  "correlation_selected_features": [
+    "amount",
+    "oldbalanceOrg",
+    "oldbalanceDest",
+    "type_CASH_IN",
+    "type_CASH_OUT",
+    "type_PAYMENT",
+    "type_TRANSFER"
+  ]
+}

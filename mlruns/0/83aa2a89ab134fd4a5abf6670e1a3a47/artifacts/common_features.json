@@ -1,0 +1,11 @@
+{
+  "common_features": [
+    "type_CASH_OUT",
+    "type_PAYMENT",
+    "amount",
+    "oldbalanceOrg",
+    "type_TRANSFER",
+    "oldbalanceDest",
+    "type_CASH_IN"
+  ]
+}

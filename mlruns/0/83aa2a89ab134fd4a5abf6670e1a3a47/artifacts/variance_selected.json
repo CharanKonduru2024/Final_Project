@@ -1,0 +1,13 @@
+{
+  "variance_selected_features": [
+    "amount",
+    "oldbalanceOrg",
+    "newbalanceOrig",
+    "oldbalanceDest",
+    "newbalanceDest",
+    "type_CASH_IN",
+    "type_CASH_OUT",
+    "type_PAYMENT",
+    "type_TRANSFER"
+  ]
+}

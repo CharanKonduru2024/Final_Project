@@ -1,0 +1,13 @@
+{
+  "feature_variances": {
+    "amount": 1.0,
+    "oldbalanceOrg": 1.0000000000000002,
+    "newbalanceOrig": 0.9999999999999999,
+    "oldbalanceDest": 0.9999999999999999,
+    "newbalanceDest": 1.0,
+    "type_CASH_IN": 0.9999999999999997,
+    "type_CASH_OUT": 1.0,
+    "type_PAYMENT": 0.9999999999999997,
+    "type_TRANSFER": 1.0000000000000002
+  }
+}

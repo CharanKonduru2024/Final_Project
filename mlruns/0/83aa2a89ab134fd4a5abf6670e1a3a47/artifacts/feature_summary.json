@@ -1,0 +1,74 @@
+{
+  "amount": {
+    "selected_by_correlation": true,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": true,
+    "variance": 1.0,
+    "importance": 0.21231231328542743
+  },
+  "oldbalanceOrg": {
+    "selected_by_correlation": true,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": true,
+    "variance": 1.0000000000000002,
+    "importance": 0.3065544463306585
+  },
+  "newbalanceOrig": {
+    "selected_by_correlation": false,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": false,
+    "variance": 0.9999999999999999,
+    "importance": 0.15560044864553607
+  },
+  "oldbalanceDest": {
+    "selected_by_correlation": true,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": true,
+    "variance": 0.9999999999999999,
+    "importance": 0.05377616481310784
+  },
+  "newbalanceDest": {
+    "selected_by_correlation": false,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": false,
+    "variance": 1.0,
+    "importance": 0.07491100836190981
+  },
+  "type_CASH_IN": {
+    "selected_by_correlation": true,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": true,
+    "variance": 0.9999999999999997,
+    "importance": 0.03432031212513501
+  },
+  "type_CASH_OUT": {
+    "selected_by_correlation": true,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": true,
+    "variance": 1.0,
+    "importance": 0.030722035400274097
+  },
+  "type_PAYMENT": {
+    "selected_by_correlation": true,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": true,
+    "variance": 0.9999999999999997,
+    "importance": 0.03824975365854896
+  },
+  "type_TRANSFER": {
+    "selected_by_correlation": true,
+    "selected_by_variance": true,
+    "selected_by_importance": true,
+    "selected_by_all_methods": true,
+    "variance": 1.0000000000000002,
+    "importance": 0.09355351737940237
+  }
+}

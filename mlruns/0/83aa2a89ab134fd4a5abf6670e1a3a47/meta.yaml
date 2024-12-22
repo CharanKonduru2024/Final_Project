@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/charankonduru/Desktop/env/my_book/mlruns/0/83aa2a89ab134fd4a5abf6670e1a3a47/artifacts
+end_time: 1734839737801
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 83aa2a89ab134fd4a5abf6670e1a3a47
+run_name: feature_selection_comparison
+run_uuid: 83aa2a89ab134fd4a5abf6670e1a3a47
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1734839736714
+status: 3
+tags: []
+user_id: charankonduru

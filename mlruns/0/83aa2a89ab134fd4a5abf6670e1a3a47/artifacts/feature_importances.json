@@ -1,0 +1,13 @@
+{
+  "feature_importances": {
+    "amount": 0.21231231328542743,
+    "oldbalanceOrg": 0.3065544463306585,
+    "newbalanceOrig": 0.15560044864553607,
+    "oldbalanceDest": 0.05377616481310784,
+    "newbalanceDest": 0.07491100836190981,
+    "type_CASH_IN": 0.03432031212513501,
+    "type_CASH_OUT": 0.030722035400274097,
+    "type_PAYMENT": 0.03824975365854896,
+    "type_TRANSFER": 0.09355351737940237
+  }
+}

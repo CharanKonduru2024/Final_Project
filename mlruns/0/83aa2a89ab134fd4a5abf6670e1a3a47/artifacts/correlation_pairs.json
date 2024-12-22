@@ -1,0 +1,14 @@
+{
+  "correlation_pairs": [
+    {
+      "feature1": "oldbalanceOrg",
+      "feature2": "newbalanceOrig",
+      "correlation": 0.8688312078378916
+    },
+    {
+      "feature1": "oldbalanceDest",
+      "feature2": "newbalanceDest",
+      "correlation": 0.9462635320998501
+    }
+  ]
+}
